@@ -79,7 +79,7 @@
 <script>
 (function() {
   var GSHEET_URL = "https://script.google.com/macros/s/AKfycbxd1mug0pGQJeeoNtrD_MIBE3x4oA3Gk4C2l9neZvfbC7yzaaKHesNZt-6-hKgYoHn2Cw/exec";
-  var GEMINI_KEY = "AIzaSyCah-nIONe8C-c9blOZQgkzQgxzcZ6MYhY";
+  var ANALYZE_URL = "https://agentic-shopping.vercel.app/api/analyze";
   var ADMIN_USER = "admin";
   var ADMIN_PASS = "saheli2026";
   var refreshInterval = null;
@@ -259,22 +259,14 @@
     var prompt = "Analyze this shopping conversation. Give a brief seller report:\n\n" + convo +
       "\n\nRespond in this format:\nINTENT: What customer wanted (1 line)\nLIKED: What they liked (1 line)\nCONCERNS: Hesitations or doubts (1 line)\nOUTCOME: Did they buy? Why not? (1 line)\nACTION: What seller should do (1 line)\nSATISFACTION: Rate 1-5";
 
-    fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_KEY, {
+    fetch(ANALYZE_URL, {
       method: "POST",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        contents: [{role: "user", parts: [{text: prompt}]}],
-        generationConfig: {maxOutputTokens: 500, thinkingConfig: {thinkingBudget: 0}}
-      })
+      body: JSON.stringify({ conversation: convo })
     })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
-      var text = "";
-      for (var i = 0; i < parts.length; i++) {
-        if (parts[i].text && !parts[i].thought) { text = parts[i].text; break; }
-      }
-      text = (text || "Analysis failed").replace(/^OK[.,]?\s*/i, "").trim();
+      var text = data.analysis || data.error || "Analysis failed";
       var el = document.getElementById("analysis-result");
       if (el) {
         el.innerHTML = '<div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 mt-4"><h4 class="text-sm font-semibold text-indigo-400 mb-2">AI Session Analysis</h4><pre class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">' + esc(text) + '</pre></div>';
