@@ -3,21 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Saheli Admin Dashboard</title>
+  <title>Agentic Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-    .pulse-green { animation: pulse-green 2s infinite; }
-  </style>
 </head>
 <body class="bg-gray-950 text-gray-200 min-h-screen">
 
-  <!-- Login Screen -->
+  <!-- Login -->
   <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
     <div class="bg-gray-900 rounded-2xl p-6 sm:p-8 border border-gray-800 w-full max-w-sm shadow-2xl">
       <div class="text-center mb-6">
-        <span class="text-4xl">🛍️</span>
-        <h1 class="text-2xl font-bold text-white mt-2">Saheli Admin</h1>
+        <div class="text-4xl mb-2">🛍️</div>
+        <h1 class="text-2xl font-bold text-white">Agentic Admin</h1>
         <p class="text-gray-500 text-sm mt-1">Login to view chat sessions</p>
       </div>
       <div class="space-y-4">
@@ -29,11 +25,10 @@
         <div>
           <label class="text-xs text-gray-500 block mb-1">Password</label>
           <input id="password" type="password" placeholder="Enter password"
-            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500"
-            onkeydown="if(event.key==='Enter') login()" />
+            class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-amber-500" />
         </div>
         <p id="login-error" class="text-red-400 text-xs hidden">Invalid credentials</p>
-        <button onclick="login()"
+        <button id="login-btn"
           class="w-full bg-amber-500 text-black font-semibold py-3 rounded-xl hover:bg-amber-400 transition-colors">
           Login
         </button>
@@ -41,50 +36,40 @@
     </div>
   </div>
 
-  <!-- Dashboard (hidden until login) -->
+  <!-- Dashboard -->
   <div id="dashboard" class="hidden">
-    <!-- Header -->
     <header class="bg-gray-900 border-b border-gray-800 px-4 sm:px-6 py-4">
       <div class="flex flex-wrap items-center justify-between gap-3 max-w-7xl mx-auto">
         <div class="flex items-center gap-3">
           <span class="text-2xl">🛍️</span>
           <div>
-            <h1 class="text-xl font-bold text-white">Saheli Admin</h1>
+            <h1 class="text-xl font-bold text-white">Agentic Admin</h1>
             <p class="text-xs text-gray-500">Live Session Dashboard</p>
           </div>
         </div>
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-3 flex-wrap">
           <label class="flex items-center gap-2 text-sm text-gray-400">
-            <input type="checkbox" id="auto-refresh" checked onchange="toggleRefresh()"
-              class="rounded accent-amber-500" />
+            <input type="checkbox" id="auto-refresh" checked class="rounded accent-amber-500" />
             Auto-refresh
           </label>
-          <button onclick="fetchData()"
-            class="text-sm bg-gray-800 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700">Refresh</button>
+          <button id="refresh-btn" class="text-sm bg-gray-800 text-gray-300 px-4 py-2 rounded-lg hover:bg-gray-700">Refresh</button>
           <a href="https://docs.google.com/spreadsheets/d/1oKRqcEZGt2E53RTKs5EnxtxnYhdI7cMZ9FZ_ivMJc9c/edit"
-            target="_blank" class="text-sm bg-green-800 text-green-300 px-4 py-2 rounded-lg hover:bg-green-700">
-            Open Sheet
-          </a>
-          <button onclick="logout()" class="text-sm text-gray-500 hover:text-gray-300">Logout</button>
+            target="_blank" class="text-sm bg-green-800 text-green-300 px-4 py-2 rounded-lg hover:bg-green-700">Sheet</a>
+          <button id="logout-btn" class="text-sm text-gray-500 hover:text-gray-300">Logout</button>
         </div>
       </div>
     </header>
-
     <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-      <!-- Stats -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8" id="stats-grid"></div>
-
+      <div id="stats-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8"></div>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Sessions List -->
         <div class="lg:col-span-1">
           <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3">Sessions</h2>
           <div id="sessions-list" class="space-y-2 max-h-[70vh] overflow-y-auto"></div>
         </div>
-        <!-- Chat Transcript -->
         <div class="lg:col-span-2">
           <h2 class="text-sm font-semibold text-gray-400 uppercase mb-3" id="transcript-title">Select a session</h2>
           <div id="transcript" class="bg-gray-900 rounded-xl border border-gray-800 p-4 max-h-[70vh] overflow-y-auto">
-            <p class="text-gray-600 text-sm text-center py-16">Click on a session to view the conversation</p>
+            <p class="text-gray-600 text-sm text-center py-16">Click a session to view conversation</p>
           </div>
         </div>
       </div>
@@ -92,261 +77,223 @@
   </div>
 
 <script>
-const GSHEET_URL = "https://script.google.com/macros/s/AKfycbxd1mug0pGQJeeoNtrD_MIBE3x4oA3Gk4C2l9neZvfbC7yzaaKHesNZt-6-hKgYoHn2Cw/exec";
-const GEMINI_KEY = "AIzaSyAjrZgYvmhoVJI4tpbHNpe8WCn-bB5T6rs";
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "saheli2026";
+(function() {
+  var GSHEET_URL = "https://script.google.com/macros/s/AKfycbxd1mug0pGQJeeoNtrD_MIBE3x4oA3Gk4C2l9neZvfbC7yzaaKHesNZt-6-hKgYoHn2Cw/exec";
+  var GEMINI_KEY = "AIzaSyAjrZgYvmhoVJI4tpbHNpe8WCn-bB5T6rs";
+  var ADMIN_USER = "admin";
+  var ADMIN_PASS = "saheli2026";
+  var refreshInterval = null;
+  var sessionsData = [];
+  var selectedSessionId = null;
+  var LANGS = {"en":"English","hi":"Hindi","te":"Telugu","ta":"Tamil","kn":"Kannada","ml":"Malayalam","bn":"Bengali","mr":"Marathi","gu":"Gujarati","pa":"Punjabi","or":"Odia","ur":"Urdu"};
 
-let refreshInterval = null;
-let sessionsData = [];
-let selectedSessionId = null;
+  function esc(t) { var d = document.createElement("div"); d.textContent = t || ""; return d.innerHTML; }
 
-const LANG_NAMES = { "en":"English", "hi":"Hindi", "te":"Telugu", "ta":"Tamil", "kn":"Kannada", "ml":"Malayalam", "bn":"Bengali", "mr":"Marathi", "gu":"Gujarati", "pa":"Punjabi", "or":"Odia", "ur":"Urdu" };
-
-function login() {
-  const u = document.getElementById("username").value.trim();
-  const p = document.getElementById("password").value.trim();
-  if (u === ADMIN_USER && p === ADMIN_PASS) {
-    try { localStorage.setItem("saheli_admin", "true"); } catch(e) {}
-    showDashboard();
-  } else {
-    document.getElementById("login-error").classList.remove("hidden");
-    setTimeout(() => document.getElementById("login-error").classList.add("hidden"), 3000);
-  }
-}
-
-function logout() {
-  localStorage.removeItem("saheli_admin");
-  document.getElementById("dashboard").classList.add("hidden");
-  document.getElementById("login-screen").classList.remove("hidden");
-}
-
-function showDashboard() {
-  document.getElementById("login-screen").classList.add("hidden");
-  document.getElementById("dashboard").classList.remove("hidden");
-  fetchData();
-  startRefresh();
-}
-
-function toggleRefresh() {
-  if (document.getElementById("auto-refresh").checked) startRefresh();
-  else stopRefresh();
-}
-
-function startRefresh() { stopRefresh(); refreshInterval = setInterval(fetchData, 10000); }
-function stopRefresh() { if (refreshInterval) clearInterval(refreshInterval); }
-
-function timeAgo(ts) {
-  const diff = Date.now() - new Date(ts).getTime();
-  if (diff < 60000) return "just now";
-  if (diff < 3600000) return Math.floor(diff/60000) + "m ago";
-  if (diff < 86400000) return Math.floor(diff/3600000) + "h ago";
-  return Math.floor(diff/86400000) + "d ago";
-}
-
-async function fetchData() {
-  try {
-    const res = await fetch(GSHEET_URL);
-    const data = await res.json();
-    sessionsData = data.sessions || [];
-    renderStats(data.stats || {});
-    renderSessions();
-    if (selectedSessionId) renderTranscript(selectedSessionId);
-  } catch(e) { console.error("Fetch error:", e); }
-}
-
-function renderStats(s) {
-  const langHtml = Object.entries(s.languageBreakdown || {}).map(([l,c]) =>
-    `<span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">${LANG_NAMES[l]||l}: ${c}</span>`
-  ).join("") || '<span class="text-xs text-gray-600">No data yet</span>';
-
-  document.getElementById("stats-grid").innerHTML = `
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p class="text-3xl font-bold text-white">${s.totalSessions||0}</p>
-      <p class="text-xs text-gray-500 mt-1">Total Sessions</p>
-    </div>
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p class="text-3xl font-bold text-green-400">${s.activeSessions||0}</p>
-      <p class="text-xs text-gray-500 mt-1">Active Now</p>
-    </div>
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p class="text-3xl font-bold text-amber-400">${s.totalMessages||0}</p>
-      <p class="text-xs text-gray-500 mt-1">Total Messages</p>
-    </div>
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p class="text-3xl font-bold text-purple-400">${s.avgMessagesPerSession||0}</p>
-      <p class="text-xs text-gray-500 mt-1">Avg Msgs/Session</p>
-    </div>
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-lg">👍 ${s.totalLikes||0}</span>
-        <span class="text-lg">👎 ${s.totalDislikes||0}</span>
-      </div>
-      <p class="text-xs text-gray-500">Satisfaction: <span class="${(s.satisfactionRate||0) >= 70 ? 'text-green-400' : 'text-red-400'}">${s.satisfactionRate||0}%</span></p>
-    </div>
-    <div class="bg-gray-900 rounded-xl p-4 border border-gray-800">
-      <p class="text-sm font-medium text-white mb-2">Languages</p>
-      <div class="flex flex-wrap gap-1">${langHtml}</div>
-    </div>`;
-}
-
-function renderSessions() {
-  if (sessionsData.length === 0) {
-    document.getElementById("sessions-list").innerHTML = `
-      <div class="text-center py-12">
-        <p class="text-4xl mb-3">💬</p>
-        <p class="text-gray-500 text-sm">No sessions yet</p>
-        <p class="text-gray-600 text-xs mt-1">Start chatting with Saheli!</p>
-      </div>`;
-    return;
+  function timeAgo(ts) {
+    var d = Date.now() - new Date(ts).getTime();
+    if (d < 60000) return "just now";
+    if (d < 3600000) return Math.floor(d/60000) + "m ago";
+    if (d < 86400000) return Math.floor(d/3600000) + "h ago";
+    return Math.floor(d/86400000) + "d ago";
   }
 
-  document.getElementById("sessions-list").innerHTML = sessionsData.map(s => {
-    const isActive = Date.now() - new Date(s.lastActiveAt).getTime() < 300000;
-    const last = s.messages[s.messages.length - 1];
-    const selected = selectedSessionId === s.id;
-    return `
-      <button onclick="selectSession('${s.id}')"
-        class="w-full text-left p-3 rounded-xl border transition-all ${selected ? 'bg-amber-500/10 border-amber-500/50' : 'bg-gray-900 border-gray-800 hover:border-gray-700'}">
-        <div class="flex items-center justify-between mb-1">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full ${isActive ? 'bg-green-400 pulse-green' : 'bg-gray-600'}"></span>
-            <span class="text-xs font-mono text-gray-500">${s.id.slice(0,14)}</span>
-          </div>
-          <span class="text-xs text-gray-600">${timeAgo(s.lastActiveAt)}</span>
-        </div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">${LANG_NAMES[s.language]||s.language}</span>
-          <span class="text-xs text-gray-600">${s.messages.filter(m=>m.role!=='feedback').length} msgs</span>
-          ${s.messages.some(m=>m.role==='feedback') ? `<span class="text-xs">${s.messages.filter(m=>m.content?.startsWith('LIKED')).length}👍 ${s.messages.filter(m=>m.content?.startsWith('DISLIKED')).length}👎</span>` : ''}
-        </div>
-        ${last ? `<p class="text-xs text-gray-500 truncate">${last.role==='user'?'👤 ':'🤖 '}${last.content.slice(0,60)}</p>` : ''}
-      </button>`;
-  }).join("");
-}
-
-function selectSession(id) {
-  selectedSessionId = id;
-  renderSessions();
-  renderTranscript(id);
-}
-
-function renderTranscript(id) {
-  const session = sessionsData.find(s => s.id === id);
-  if (!session) return;
-
-  document.getElementById("transcript-title").textContent = `Conversation — ${id.slice(0,14)}`;
-  document.getElementById("transcript").innerHTML = `
-    <div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800">
-      <div class="flex items-center gap-2 text-xs text-gray-600">
-        <span>Started: ${new Date(session.startedAt).toLocaleString()}</span>
-        <span>|</span>
-        <span>Language: ${LANG_NAMES[session.language]||session.language}</span>
-        <span>|</span>
-        <span>${session.messages.length} messages</span>
-        ${session.likes ? `<span>| 👍${session.likes}</span>` : ''}
-        ${session.dislikes ? `<span>👎${session.dislikes}</span>` : ''}
-      </div>
-      <button id="analyze-btn" onclick="analyzeSession('${session.id}')"
-        class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-500 transition-colors">
-        Analyze Session
-      </button>
-    </div>
-    <div id="analysis-result"></div>
-    ${session.messages.map(m => {
-      if (m.role === 'feedback') {
-        const isLike = m.content.startsWith('LIKED');
-        return `
-          <div class="flex justify-center mb-3">
-            <div class="text-xs px-3 py-1.5 rounded-full ${isLike ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}">
-              ${isLike ? '👍' : '👎'} ${escapeHtml(m.content)}
-            </div>
-          </div>`;
-      }
-      return `
-      <div class="flex ${m.role==='user'?'justify-end':'justify-start'} mb-3">
-        <div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${
-          m.role==='user' ? 'bg-amber-500/20 text-amber-200 rounded-br-sm' : 'bg-gray-800 text-gray-300 rounded-bl-sm'
-        }">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xs font-medium">${m.role==='user'?'👤 Customer':'🤖 Saheli'}</span>
-            <span class="text-xs text-gray-600">${new Date(m.timestamp).toLocaleTimeString()}</span>
-          </div>
-          <p class="whitespace-pre-wrap leading-relaxed">${escapeHtml(m.content)}</p>
-        </div>
-      </div>`; }
-    `).join("")}`;
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
-// Analyze session with Gemini
-async function analyzeSession(id) {
-  const session = sessionsData.find(s => s.id === id);
-  if (!session) return;
-
-  const btn = document.getElementById("analyze-btn");
-  if (btn) { btn.textContent = "Analyzing..."; btn.disabled = true; }
-
-  const convo = session.messages
-    .filter(m => m.role === "user" || m.role === "assistant")
-    .map(m => `${m.role === "user" ? "Customer" : "Saheli"}: ${m.content}`)
-    .join("\n");
-
-  const prompt = `Analyze this shopping conversation and give a brief seller report:
-
-${convo}
-
-Respond in this exact format:
-INTENT: What the customer was looking for (1 line)
-LIKED: What they responded well to (1 line, or "Nothing specific")
-CONCERNS: Any hesitation, objections, or doubts (1 line, or "None")
-OUTCOME: Did they buy? If not, why? (1 line)
-ACTION: What the seller should do next (1 line)
-SATISFACTION: Rate 1-5 based on conversation quality`;
-
-  try {
-    const res = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_KEY,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 500, thinkingConfig: { thinkingBudget: 0 } }
-        })
-      }
-    );
-    const data = await res.json();
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    const textPart = parts.find(p => !p.thought && p.text);
-    const analysis = (textPart?.text || "Analysis failed").replace(/^OK[.,]?\s*/i, "").trim();
-
-    const analysisDiv = document.getElementById("analysis-result");
-    if (analysisDiv) {
-      analysisDiv.innerHTML = `
-        <div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 mt-4">
-          <h4 class="text-sm font-semibold text-indigo-400 mb-2">AI Session Analysis</h4>
-          <pre class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">${escapeHtml(analysis)}</pre>
-        </div>`;
+  // Login
+  document.getElementById("login-btn").onclick = function() {
+    var u = document.getElementById("username").value.trim();
+    var p = document.getElementById("password").value.trim();
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      try { localStorage.setItem("saheli_admin", "true"); } catch(e) {}
+      showDashboard();
+    } else {
+      var err = document.getElementById("login-error");
+      err.classList.remove("hidden");
+      setTimeout(function() { err.classList.add("hidden"); }, 3000);
     }
-  } catch (e) {
-    console.error("Analysis error:", e);
-    const analysisDiv = document.getElementById("analysis-result");
-    if (analysisDiv) analysisDiv.innerHTML = `<p class="text-red-400 text-xs mt-2">Analysis failed: ${e.message}</p>`;
+  };
+
+  document.getElementById("password").onkeydown = function(e) {
+    if (e.key === "Enter") document.getElementById("login-btn").click();
+  };
+
+  document.getElementById("logout-btn").onclick = function() {
+    try { localStorage.removeItem("saheli_admin"); } catch(e) {}
+    document.getElementById("dashboard").classList.add("hidden");
+    document.getElementById("login-screen").classList.remove("hidden");
+  };
+
+  document.getElementById("refresh-btn").onclick = function() { fetchData(); };
+
+  document.getElementById("auto-refresh").onchange = function() {
+    if (this.checked) startRefresh(); else stopRefresh();
+  };
+
+  function showDashboard() {
+    document.getElementById("login-screen").classList.add("hidden");
+    document.getElementById("dashboard").classList.remove("hidden");
+    fetchData();
+    startRefresh();
   }
 
-  if (btn) { btn.textContent = "Analyze Session"; btn.disabled = false; }
-}
+  function startRefresh() { stopRefresh(); refreshInterval = setInterval(fetchData, 10000); }
+  function stopRefresh() { if (refreshInterval) { clearInterval(refreshInterval); refreshInterval = null; } }
 
-// Auto-login if previously authenticated
-if (localStorage.getItem("saheli_admin") === "true") {
-  showDashboard();
-}
+  function fetchData() {
+    fetch(GSHEET_URL)
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        sessionsData = data.sessions || [];
+        renderStats(data.stats || {});
+        renderSessions();
+        if (selectedSessionId) renderTranscript(selectedSessionId);
+      })
+      .catch(function(e) { console.error("Fetch error:", e); });
+  }
+
+  function renderStats(s) {
+    var langHtml = "";
+    var lb = s.languageBreakdown || {};
+    for (var k in lb) {
+      langHtml += '<span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">' + (LANGS[k]||k) + ": " + lb[k] + "</span> ";
+    }
+    if (!langHtml) langHtml = '<span class="text-xs text-gray-600">No data</span>';
+
+    var satColor = (s.satisfactionRate || 0) >= 70 ? "text-green-400" : "text-red-400";
+
+    document.getElementById("stats-grid").innerHTML =
+      '<div class="bg-gray-900 rounded-xl p-4 border border-gray-800"><p class="text-3xl font-bold text-white">' + (s.totalSessions||0) + '</p><p class="text-xs text-gray-500 mt-1">Total Sessions</p></div>' +
+      '<div class="bg-gray-900 rounded-xl p-4 border border-gray-800"><p class="text-3xl font-bold text-green-400">' + (s.activeSessions||0) + '</p><p class="text-xs text-gray-500 mt-1">Active Now</p></div>' +
+      '<div class="bg-gray-900 rounded-xl p-4 border border-gray-800"><p class="text-3xl font-bold text-amber-400">' + (s.totalMessages||0) + '</p><p class="text-xs text-gray-500 mt-1">Total Messages</p></div>' +
+      '<div class="bg-gray-900 rounded-xl p-4 border border-gray-800"><p class="text-3xl font-bold text-purple-400">' + (s.avgMessagesPerSession||0) + '</p><p class="text-xs text-gray-500 mt-1">Avg Msgs/Session</p></div>' +
+      '<div class="bg-gray-900 rounded-xl p-4 border border-gray-800"><div class="flex items-center gap-2 mb-1"><span class="text-lg">👍 ' + (s.totalLikes||0) + '</span><span class="text-lg">👎 ' + (s.totalDislikes||0) + '</span></div><p class="text-xs text-gray-500">Satisfaction: <span class="' + satColor + '">' + (s.satisfactionRate||0) + '%</span></p></div>';
+  }
+
+  function renderSessions() {
+    var el = document.getElementById("sessions-list");
+    if (sessionsData.length === 0) {
+      el.innerHTML = '<div class="text-center py-12"><p class="text-4xl mb-3">💬</p><p class="text-gray-500 text-sm">No sessions yet</p></div>';
+      return;
+    }
+    var html = "";
+    for (var i = 0; i < sessionsData.length; i++) {
+      var s = sessionsData[i];
+      var isActive = Date.now() - new Date(s.lastActiveAt).getTime() < 300000;
+      var last = s.messages[s.messages.length - 1];
+      var sel = selectedSessionId === s.id;
+      var dotClass = isActive ? "bg-green-400 animate-pulse" : "bg-gray-600";
+      var borderClass = sel ? "bg-amber-500/10 border-amber-500/50" : "bg-gray-900 border-gray-800 hover:border-gray-700";
+
+      html += '<button data-sid="' + s.id + '" class="session-btn w-full text-left p-3 rounded-xl border transition-all ' + borderClass + '">';
+      html += '<div class="flex items-center justify-between mb-1"><div class="flex items-center gap-2"><span class="w-2 h-2 rounded-full ' + dotClass + '"></span><span class="text-xs font-mono text-gray-500">' + s.id.slice(0,14) + '</span></div><span class="text-xs text-gray-600">' + timeAgo(s.lastActiveAt) + '</span></div>';
+      html += '<div class="flex items-center gap-2 mb-1"><span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded">' + (LANGS[s.language]||s.language) + '</span><span class="text-xs text-gray-600">' + s.messages.length + ' msgs</span></div>';
+      if (last) html += '<p class="text-xs text-gray-500 truncate">' + (last.role === "user" ? "👤 " : "🤖 ") + esc(last.content).slice(0,60) + '</p>';
+      html += '</button>';
+    }
+    el.innerHTML = html;
+
+    // Attach click handlers
+    var btns = el.querySelectorAll(".session-btn");
+    for (var j = 0; j < btns.length; j++) {
+      btns[j].onclick = function() {
+        selectedSessionId = this.getAttribute("data-sid");
+        renderSessions();
+        renderTranscript(selectedSessionId);
+      };
+    }
+  }
+
+  function renderTranscript(id) {
+    var session = null;
+    for (var i = 0; i < sessionsData.length; i++) {
+      if (sessionsData[i].id === id) { session = sessionsData[i]; break; }
+    }
+    if (!session) return;
+
+    document.getElementById("transcript-title").textContent = "Conversation — " + id.slice(0,14);
+
+    var html = '<div class="flex items-center justify-between mb-4 pb-3 border-b border-gray-800">';
+    html += '<div class="flex items-center gap-2 text-xs text-gray-600">';
+    html += '<span>Started: ' + new Date(session.startedAt).toLocaleString() + '</span><span>|</span>';
+    html += '<span>' + (LANGS[session.language]||session.language) + '</span><span>|</span>';
+    html += '<span>' + session.messages.length + ' msgs</span></div>';
+    html += '<button id="analyze-btn" class="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded-lg hover:bg-indigo-500">Analyze</button>';
+    html += '</div><div id="analysis-result"></div>';
+
+    for (var i = 0; i < session.messages.length; i++) {
+      var m = session.messages[i];
+      if (m.role === "user") {
+        html += '<div class="flex justify-end mb-3"><div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-amber-500/20 text-amber-200 rounded-br-sm">';
+        html += '<div class="flex items-center gap-2 mb-1"><span class="text-xs font-medium">👤 Customer</span><span class="text-xs text-gray-600">' + new Date(m.timestamp).toLocaleTimeString() + '</span></div>';
+        html += '<p class="whitespace-pre-wrap leading-relaxed">' + esc(m.content) + '</p></div></div>';
+      } else {
+        html += '<div class="flex justify-start mb-3"><div class="max-w-[80%] rounded-2xl px-4 py-2.5 text-sm bg-gray-800 text-gray-300 rounded-bl-sm">';
+        html += '<div class="flex items-center gap-2 mb-1"><span class="text-xs font-medium">🤖 Saheli</span><span class="text-xs text-gray-600">' + new Date(m.timestamp).toLocaleTimeString() + '</span></div>';
+        html += '<p class="whitespace-pre-wrap leading-relaxed">' + esc(m.content) + '</p></div></div>';
+      }
+    }
+
+    document.getElementById("transcript").innerHTML = html;
+
+    // Attach analyze button
+    var analyzeBtn = document.getElementById("analyze-btn");
+    if (analyzeBtn) {
+      analyzeBtn.onclick = function() { analyzeSession(id); };
+    }
+  }
+
+  function analyzeSession(id) {
+    var session = null;
+    for (var i = 0; i < sessionsData.length; i++) {
+      if (sessionsData[i].id === id) { session = sessionsData[i]; break; }
+    }
+    if (!session) return;
+
+    var btn = document.getElementById("analyze-btn");
+    if (btn) { btn.textContent = "Analyzing..."; btn.disabled = true; }
+
+    var convo = "";
+    for (var i = 0; i < session.messages.length; i++) {
+      var m = session.messages[i];
+      convo += (m.role === "user" ? "Customer" : "Saheli") + ": " + m.content + "\n";
+    }
+
+    var prompt = "Analyze this shopping conversation. Give a brief seller report:\n\n" + convo +
+      "\n\nRespond in this format:\nINTENT: What customer wanted (1 line)\nLIKED: What they liked (1 line)\nCONCERNS: Hesitations or doubts (1 line)\nOUTCOME: Did they buy? Why not? (1 line)\nACTION: What seller should do (1 line)\nSATISFACTION: Rate 1-5";
+
+    fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=" + GEMINI_KEY, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        contents: [{role: "user", parts: [{text: prompt}]}],
+        generationConfig: {maxOutputTokens: 500, thinkingConfig: {thinkingBudget: 0}}
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var parts = (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts) || [];
+      var text = "";
+      for (var i = 0; i < parts.length; i++) {
+        if (parts[i].text && !parts[i].thought) { text = parts[i].text; break; }
+      }
+      text = (text || "Analysis failed").replace(/^OK[.,]?\s*/i, "").trim();
+      var el = document.getElementById("analysis-result");
+      if (el) {
+        el.innerHTML = '<div class="bg-indigo-500/10 border border-indigo-500/30 rounded-xl p-4 mt-4"><h4 class="text-sm font-semibold text-indigo-400 mb-2">AI Session Analysis</h4><pre class="text-xs text-gray-300 whitespace-pre-wrap leading-relaxed">' + esc(text) + '</pre></div>';
+      }
+    })
+    .catch(function(e) {
+      var el = document.getElementById("analysis-result");
+      if (el) el.innerHTML = '<p class="text-red-400 text-xs mt-2">Analysis failed</p>';
+    })
+    .finally(function() {
+      if (btn) { btn.textContent = "Analyze"; btn.disabled = false; }
+    });
+  }
+
+  // Auto-login
+  try {
+    if (localStorage.getItem("saheli_admin") === "true") showDashboard();
+  } catch(e) {}
+})();
 </script>
 </body>
 </html>
